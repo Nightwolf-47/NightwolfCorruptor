@@ -1,25 +1,25 @@
 #include "nwc.hpp"
 #include <cstdlib> //atexit() function
-//Nightwolf Corruptor Version 1.0
+//Nightwolf Corruptor Version 1.1
 //Requires a C++11 compiler (C++17 on systems other than Windows, Linux/Android and untested Mac OS X)
 
 NWC_Class nwc;
 
 std::string redfilename;
-FILE* printstream=NULL;
+FILE* printstream=nullptr;
 
 void redirectexit(void) //Works only when redirectprintf was called
 {
-    if(printstream!=NULL)
+    if(printstream!=nullptr)
         fclose(stdout);
 }
 
 void redirectprintf(std::string filename) //Redirect printf to a file
 {
-    if(printstream!=NULL)
+    if(printstream!=nullptr)
         return;
     printstream = freopen(filename.c_str(),"w",stdout);
-    if(printstream==NULL)
+    if(printstream==nullptr)
     {
         printf("ERROR: Redirection to %s has failed\n",filename.c_str());
         fclose(stdout);
@@ -39,9 +39,64 @@ void printArgs()
     printf("-output *file name* - set the output file name (default 'outfile*random number*')\n");
     printf("-add *number* - add (or remove if negative) the number to every corrupted byte\n");
     printf("-shift *number* - shift corrupted byte by *number* bytes to the right (negative numbers shift backwards)\n");
-    printf("-replace *number 1* *number 2* - replace number 1 in corrupted bytes with number 2\n");
+    printf("-replace *byte 1* *byte 2* - replace byte 1 in corrupted bytes with byte 2\n");
     printf("-random *byte 1* *byte 2* - randomize corrupted bytes in byte 1 to byte 2 range\n");
     printf("--help - print this list\n");
+}
+
+std::string everybytestr(NWC_unsigned num)
+{
+    if(num == 1)
+        return "";
+    std::string numstr=std::to_string(num);
+    if((num % 10 > 3 || num % 10 == 0) || (num >= 11 && num <= 13))
+        return numstr+"th ";
+    else if(num % 10 == 3)
+        return numstr+"rd ";
+    else if(num % 10 == 2)
+        return numstr+"nd ";
+    else if(num % 10 == 1)
+        return numstr+"st ";
+    else
+        return numstr+"th "; //should not appear
+}
+
+void printSettings()
+{
+    printf("File name: %s\n",nwc.filename.c_str());
+    if(!nwc.output.empty())
+        printf("Output file name: %s\n",nwc.output.c_str());
+    printf("Start byte: %llu\n",nwc.startbyte);
+    if(nwc.endbyte==NWC_EOFEND)
+        printf("End byte: End of the file\n");
+    else
+        printf("End byte: %llu\n",nwc.endbyte);
+    printf("Corrupt every %sbyte\n",everybytestr(nwc.everyxbyte).c_str());
+    switch(nwc.cotype.type)
+    {
+    case CTPE_ADD:
+        if(nwc.cotype.val_1<0)
+            printf("Corruption type: Substract %lld from byte\n",-nwc.cotype.val_1);
+        else
+            printf("Corruption type: Add %lld to byte\n",nwc.cotype.val_1);
+        break;
+    case CTPE_SHIFT:
+        printf("Corruption type: Shift %lld bytes\n",nwc.cotype.val_1);
+        break;
+    case CTPE_REPLACE:
+        printf("Corruption type: Replace %lld with %lld\n",nwc.cotype.val_1,nwc.cotype.val_2);
+        break;
+    case CTPE_RANDOM:
+        printf("Corruption type: Randomize byte in range %lld-%lld\n",nwc.cotype.val_1,nwc.cotype.val_2);
+        if(nwc.randseed==0)
+            printf("Seed: Automatic\n");
+        else
+            printf("Seed: %llu",nwc.randseed);
+        break;
+    default:
+        break;
+    }
+    printf("\n");
 }
 
 void unknownArg(std::string argstr)
@@ -54,7 +109,7 @@ void argstart(std::string argstr)
 {
     try
     {
-        nwc.startbyte = std::stoull(argstr);
+        nwc.startbyte = std::stoull(argstr,nullptr,0);
     }
     catch(std::invalid_argument& e)
     {
@@ -72,7 +127,7 @@ void argend(std::string argstr)
 {
     try
     {
-        nwc.endbyte = std::stoull(argstr);
+        nwc.endbyte = std::stoull(argstr,nullptr,0);
     }
     catch(std::invalid_argument& e)
     {
@@ -114,7 +169,7 @@ void argadd(std::string argstr)
 {
     try
     {
-        nwc.cotype.val_1 = std::stoll(argstr);
+        nwc.cotype.val_1 = std::stoll(argstr,nullptr,0);
     }
     catch(std::invalid_argument& e)
     {
@@ -133,7 +188,7 @@ void argshift(std::string argstr)
 {
     try
     {
-        nwc.cotype.val_1 = std::stoll(argstr);
+        nwc.cotype.val_1 = std::stoll(argstr,nullptr,0);
     }
     catch(std::invalid_argument& e)
     {
@@ -161,11 +216,11 @@ bool argreplace(std::string argstr)
     {
         if(nwc.cotype.filled==0)
         {
-            nwc.cotype.val_1 = std::stoll(argstr);
+            nwc.cotype.val_1 = std::stoll(argstr,nullptr,0);
         }
         else
         {
-            nwc.cotype.val_2 = std::stoll(argstr);
+            nwc.cotype.val_2 = std::stoll(argstr,nullptr,0);
         }
     }
     catch(std::invalid_argument& e)
@@ -175,7 +230,12 @@ bool argreplace(std::string argstr)
     }
     catch(std::out_of_range& e)
     {
-        printf("ERROR: -replace: '%s' is out of range ( %lld-%lld ) in value %d\n",argstr.c_str(),LLONG_MIN,LLONG_MAX,nwc.cotype.filled+1);
+        printf("ERROR: -replace: '%s' is out of range ( 0-255 ) in value %d\n",argstr.c_str(),nwc.cotype.filled+1);
+        exit(NWCE_OORERR);
+    }
+    if(nwc.cotype.val_1>255 || nwc.cotype.val_2>255 || nwc.cotype.val_1<0 || nwc.cotype.val_2<0)
+    {
+        printf("ERROR: -replace: '%s' is out of range ( 0-255 ) in value %d\n",argstr.c_str(),nwc.cotype.filled+1);
         exit(NWCE_OORERR);
     }
     nwc.cotype.type = CTPE_REPLACE;
@@ -199,11 +259,11 @@ bool argrandom(std::string argstr)
     {
         if(nwc.cotype.filled==0)
         {
-            nwc.cotype.val_1 = std::stoll(argstr);
+            nwc.cotype.val_1 = std::stoll(argstr,nullptr,0);
         }
         else
         {
-            nwc.cotype.val_2 = std::stoll(argstr);
+            nwc.cotype.val_2 = std::stoll(argstr,nullptr,0);
         }
     }
     catch(std::invalid_argument& e)
@@ -259,7 +319,7 @@ int main(int argc, char* argv[])
     std::string argstr;
     std::string repstr;
     int argmode=ARG_NONE;
-    printf("Nightwolf Corruptor V1.0 is running...\n\n");
+    printf("Nightwolf Corruptor V1.1 is running...\n\n");
     if(argc<2)
     {
         printf("ERROR: Not enough arguments\n\n");
@@ -350,6 +410,7 @@ int main(int argc, char* argv[])
             break;
         }
     }
+    printSettings();
     nwc.run();
     printf("Corruption successful!\n");
     redirectexit(); //In case the atexit(redirectexit) function doesn't work

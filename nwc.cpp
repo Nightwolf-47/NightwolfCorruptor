@@ -111,8 +111,8 @@ void NWC_Class::run()
         char& bytechar=filevec[byte];
         switch(cotype.type)
         {
-        case CTPE_ADD: //Add val_1 to byte. If byte value is higher than 255, it overflows to 0
-            bytechar=limittochar(bytechar+cotype.val_1);
+        case CTPE_ADD: //Add val_1 to byte. If the resulting value is higher than 255 or lower than 0, it wraps around
+            bytechar=limittochar((int)bytechar+(cotype.val_1 % 256)); //val_1 is converted to a value in range (-255,255) to prevent integer overflow
             break;
         case CTPE_SHIFT: //Swap current byte with byte that's val_1 bytes forward from it (this SHIFT implementation might change later)
             if(cotype.val_1<0 && byte+cotype.val_1<0)
