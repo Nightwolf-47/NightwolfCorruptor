@@ -27,7 +27,7 @@ Compiling is simple as NWC only has 2 .cpp files and 1 header file, but here are
 The code should compile with C++11 standard, but C++14 or newer is recommended.
 ### Windows (MinGW)
 ```
-g++ -Wall -std=c++14 -O2 -s -o nwc.exe main.cpp nwc.cpp
+g++ -Wall -std=c++14 -static -O2 -s -o nwc.exe main.cpp nwc.cpp
 ```
 ### Linux (GCC/Clang)
 ```
