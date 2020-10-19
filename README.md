@@ -17,8 +17,8 @@ A command-line tool for corrupting files.
 * -replace \<byte 1> \<byte 2> - Replace byte 1\* with byte 2\* in corrupted bytes
 * -random \<byte 1> \<byte 2> - Randomize corrupted bytes in a byte 1 to byte 2 range
 
-**Unsigned number**, **number** and **byte** can be written as a hexadecimal number (prepend it with *0x*) or as an octal number (prepend it with *0*).
-This does not apply to **\-every** and **\-seed** arguments.
+**Unsigned number**, **number** and **byte** can be written as a hexadecimal number (prepend it with *0x*) or as an octal number (prepend it with *0*), otherwise the numbers are decimal. 
+In **\-every** and **\-seed** arguments the numbers are always decimal.
 
 \* byte 1 and byte 2 are numbers between 0 and 255
 
