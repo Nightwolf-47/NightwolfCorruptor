@@ -1,6 +1,6 @@
 #include "nwc.hpp"
 #include <cstdlib> //atexit() function
-//Nightwolf Corruptor Version 1.1
+//Nightwolf Corruptor Version 1.1.1
 //Requires a C++11 compiler (C++17 on systems other than Windows, Linux/Android and untested Mac OS X)
 
 NWC_Class nwc;
@@ -38,7 +38,7 @@ void printArgs()
     printf("-seed *unsigned number* - set the RNG seed, 0 is a random seed\n");
     printf("-output *file name* - set the output file name (default 'outfile*random number*')\n");
     printf("-add *number* - add (or remove if negative) the number to every corrupted byte\n");
-    printf("-shift *number* - shift corrupted byte by *number* bytes to the right (negative numbers shift backwards)\n");
+    printf("-shift *number* - shift corrupted byte by *number* bytes forward (negative numbers shift backwards)\n");
     printf("-replace *byte 1* *byte 2* - replace byte 1 in corrupted bytes with byte 2\n");
     printf("-random *byte 1* *byte 2* - randomize corrupted bytes in byte 1 to byte 2 range\n");
     printf("--help - print this list\n");
@@ -91,7 +91,7 @@ void printSettings()
         if(nwc.randseed==0)
             printf("Seed: Automatic\n");
         else
-            printf("Seed: %llu",nwc.randseed);
+            printf("Seed: %llu\n",nwc.randseed);
         break;
     default:
         break;
@@ -319,7 +319,7 @@ int main(int argc, char* argv[])
     std::string argstr;
     std::string repstr;
     int argmode=ARG_NONE;
-    printf("Nightwolf Corruptor V1.1 is running...\n\n");
+    printf("Nightwolf Corruptor V1.1.1 is running...\n\n");
     if(argc<2)
     {
         printf("ERROR: Not enough arguments\n\n");
